@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking</title>
+</head>
+
+<body>
+    <h1>BOOKING CART</h1>
+    <h2>Book your seats Now</h2>
+
+    <p>Price per seat: $<%= price %>
+    </p>
+    <p>Quantity: <%= seats %>
+    </p>
+    <p>Total Price: $<%= totalPrice / 100 %>
+    </p> <!-- Total Price in dollars -->
+
+    <form action="/checkout" method="post">
+        <input type="submit" value="PAY NOW">
+    </form>
+</body>
+
+</html>
