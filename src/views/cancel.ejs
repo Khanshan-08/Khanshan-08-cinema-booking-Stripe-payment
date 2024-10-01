@@ -5,6 +5,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Payment Canceled</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            /* Stack elements vertically */
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #ff4e50, #fc9191);
+            /* Different color gradient */
+            color: #333;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            opacity: 0;
+            /* Start invisible */
+            animation: fadeIn 0.5s forwards 0.5s;
+            /* Fade in with a delay */
+        }
+
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            opacity: 0;
+            /* Start invisible */
+            animation: fadeIn 0.5s forwards 1s;
+            /* Fade in with a delay */
+        }
+
+        a {
+            display: inline-block;
+            padding: 12px 24px;
+            margin-top: 20px;
+            background-color: #e74c3c;
+            /* Different color for the button */
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: none;
+            cursor: pointer;
+            opacity: 0;
+            /* Start invisible */
+            animation: fadeIn 0.5s forwards 1.5s;
+            /* Fade in with a delay */
+        }
+
+        a:hover {
+            background-color: #c0392b;
+            /* Darker color on hover */
+            transform: translateY(-2px);
+        }
+
+        a:active {
+            background-color: #a93226;
+            /* Even darker color on click */
+            transform: translateY(0);
+        }
+
+        /* Animation keyframes */
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                /* Final opacity */
+            }
+        }
+
+        /* Adding some extra style for responsiveness */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            p {
+                font-size: 1rem;
+            }
+
+            a {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
