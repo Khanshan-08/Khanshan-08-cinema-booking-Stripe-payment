@@ -1,15 +1,16 @@
+// models/showtimes.js
 import { DataTypes } from "sequelize";
 import sequelize from "../config/config.js";
 
 const Showtime = sequelize.define("Showtime", {
-  movie_id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true,
+  },
+  movie_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
   },
   time: {
     type: DataTypes.STRING(20),
@@ -29,7 +30,7 @@ const Showtime = sequelize.define("Showtime", {
     defaultValue: "[]",
   },
   perSeat_Price: {
-    type: DataTypes.STRING, // Adjust the precision and scale as needed
+    type: DataTypes.STRING, // Adjust as needed
     allowNull: false,
   },
 });
@@ -45,12 +46,12 @@ Showtime.associate = (models) => {
 
   Showtime.hasMany(models.Seat, {
     foreignKey: "showtime_id",
-    as: "seatsList", 
+    as: "seatsList",
   });
 
   Showtime.hasMany(models.Booking, {
     foreignKey: "showtime_id",
-    as: "bookingsList", 
+    as: "bookingsList",
   });
 };
 

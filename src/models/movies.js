@@ -1,3 +1,4 @@
+// models/movies.js
 import { DataTypes } from "sequelize";
 import sequelize from "../config/config.js";
 
@@ -37,6 +38,7 @@ const Movie = sequelize.define("Movie", {
   },
 });
 
+// Associations
 Movie.associate = (models) => {
   Movie.hasMany(models.Showtime, {
     foreignKey: "movie_id",

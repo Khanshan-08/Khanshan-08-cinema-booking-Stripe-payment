@@ -2,7 +2,7 @@ import express from "express";
 import apiLimiter from "../middleware/ratelimiting.js";
 import verifytoken from "../middleware/verifytoken.js";
 import authenticateToken from "../middleware/authentication.js";
-import bookingtoken from "../middleware/bookingauth.js";
+// import bookingtoken from "../middleware/bookingauth.js";
 import {
   signup,
   login,
@@ -12,10 +12,11 @@ import {
   getshowtime,
   getavailableseats,
   getshowtimebyid,
-  booking,
   getbookinglist,
   deletebooking,
+  bookSeats,
 } from "../controllers/user-controller.js";
+import db from "../config/config.js"
 
 const router = new express.Router();
 
@@ -428,7 +429,7 @@ router.get("/authroute", verifytoken, authroute);
  *                   type: string
  *                   example: Error details or stack trace
  */
-router.post("/booking", bookingtoken, booking);
+router.post("/booking",authenticateToken, bookSeats);
 //documentation for getting bookingn list
 /**
  * @swagger

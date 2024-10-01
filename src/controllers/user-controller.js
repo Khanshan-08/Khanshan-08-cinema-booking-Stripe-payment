@@ -8,7 +8,13 @@ import Showtime from "../models/showtimes.js";
 import Booking from "../models/booking.js";
 import { Op } from "sequelize";
 import Stripe from "stripe"; 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+import dotenv from "dotenv";
+import dayjs from "dayjs"; 
+const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY ||
+    "sk_test_51Q3F4XHkb72MRGcsOvGZQGASRqtCBcmyHPl2MZRCkmOHTFgYkuPpCdirklykxWeoBg1XequtjnVPzen5CTFPF5qI00J6W07gU1"
+);
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -343,83 +349,96 @@ export const getavailableseats = async (req, res) => {
       .send({ success: false, error: error.message || error.toString() });
   }
 };
-//booking
-export const booking = async (req, res) => {
-  const { showtimeId, seats, paymentMethodId } = req.body;
+
+export const bookSeats = async (req, res) => {
+  const { cinema, seats } = req.body; // Get cinema name and number of seats from the request body
+  console.log("Booking request received:", req.body);
+
+  // Check for user authentication first
+  const userId = req.user ? req.user.id : null;
+  if (!userId) {
+    return res.status(401).json({ message: "User not authenticated." });
+  }
 
   try {
-    if (!Array.isArray(seats) || seats.length === 0) {
-      return res.status(400).send({
-        success: false,
-        message: "No seats provided in the request",
-      });
+    // Fetch showtime details based on the cinema name
+    const showtimeDetails = await Showtime.findOne({
+      where: { cinema }, // Query using the cinema name
+    });
+    console.log(showtimeDetails);
+
+    if (!showtimeDetails) {
+      return res.status(404).json({ message: "Showtime not found." });
     }
 
-    const showtime = await Showtime.findOne({ where: { id: showtimeId } });
-    if (!showtime) {
-      return res
-        .status(404)
-        .send({ success: false, message: "Showtime not found" });
+    let availableSeats = JSON.parse(showtimeDetails.availableSeats);
+
+    if (seats > availableSeats.length) {
+      return res.status(400).json({ message: "Not enough seats available." });
     }
 
-    let availableSeats = JSON.parse(showtime.availableSeats || "[]");
+    // Parse and convert the price from string to integer
+    const perSeatPriceStr = showtimeDetails.perSeat_Price; // e.g., "50$"
+    const perSeatPrice = parseInt(perSeatPriceStr.replace(/[$,]/g, ""), 10); // Remove $ and convert to integer
+    console.log("Parsed per seat price:", perSeatPrice);
 
-    const unavailableSeats = seats.filter(
-      (seat) => !availableSeats.includes(Number(seat))
-    );
-    if (unavailableSeats.length > 0) {
-      return res.status(400).send({
-        success: false,
-        message: "Some of the requested seats are not available",
-        unavailableSeats,
-      });
+    // Calculate total price in cents
+    const price = seats * perSeatPrice * 100; // Price in cents for Stripe
+    console.log("Calculated price in cents:", price);
+
+    // Check if the calculated price is a valid number
+    if (isNaN(price) || price <= 0) {
+      console.error("Invalid price calculated:", price);
+      return res.status(400).json({ message: "Invalid price calculated." });
     }
 
-    const perSeatPrice = parseFloat(
-      showtime.perSeat_Price.replace(/[^0-9.-]+/g, "")
-    );
-    const totalPrice = perSeatPrice * seats.length * 100; // In cents
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: totalPrice,
-      currency: "usd",
-      payment_method: paymentMethodId,
-      confirm: true,
+    // Create a Stripe payment session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: `Booking for ${showtimeDetails.cinema} at ${showtimeDetails.time}`,
+            },
+            unit_amount: price, // Price in cents
+          },
+          quantity: 1, // Adjust if selling multiple items
+        },
+      ],
+      mode: "payment",
+      success_url: `http://localhost:4500/success`,
+      cancel_url: `http://localhost:4500/cancel`,
     });
 
-    if (paymentIntent.status === "succeeded") {
-      availableSeats = availableSeats.filter(
-        (seat) => !seats.includes(Number(seat))
-      );
-      await showtime.update({ availableSeats: JSON.stringify(availableSeats) });
+    // Save booking to the database
+    const newBooking = await Booking.create({
+      user_id: userId, // Assign user ID (real)
+      showtime_id: showtimeDetails.id, // Ensure this is filled with valid showtime ID
+      seats: seats.toString(), // Store seats as string if needed
+      booking_date: dayjs().toDate(), // Set current date and time for booking_date
+      createdAt: dayjs().toDate(), // Set createdAt to current date and time
+      updatedAt: dayjs().toDate(), // Set updatedAt to current date and time
+    });
 
-      const newBooking = await Booking.create({
-        user_id: req.user.id,
-        showtime_id: showtimeId,
-        seats,
-      });
+    // Reduce the available seats by the number of seats booked
+    availableSeats = availableSeats.slice(seats); // Remove booked seats
+    await Showtime.update(
+      { availableSeats: JSON.stringify(availableSeats) },
+      { where: { id: showtimeDetails.id } }
+    );
 
-      return res.status(201).send({
-        success: true,
-        message: "Booking successful and payment processed",
-        newBooking,
-        paymentIntent,
-      });
-    } else {
-      return res.status(400).send({
-        success: false,
-        message: "Payment failed",
-        paymentIntent,
-      });
-    }
+    // Return the session ID and price
+    res
+      .status(200)
+      .json({ sessionId: session.id, url: session.url, price: price / 100 }); // Return the session ID and price
   } catch (error) {
-    return res.status(500).send({
-      success: false,
-      message: "An error occurred while booking the seats",
-      error: error.message,
-    });
+    console.error("Error processing booking request:", error);
+    res.status(500).json({ message: "Error processing booking." });
   }
 };
+
 
 //allbookinglist
 export const getbookinglist = async (req, res) => {
