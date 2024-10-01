@@ -1,4 +1,3 @@
-// Your existing index.js code...
 import express from "express";
 import cors from "cors";
 import routes from "./routes/user-routes.js";
@@ -7,8 +6,6 @@ import "./models/sync.js";
 import { swaggerMiddleware, swaggerSetup } from "./config/swagger.js";
 import Stripe from "stripe";
 import dotenv from "dotenv";
-import { bookSeats } from "./controllers/user-controller.js"; // Import booking function
-import { Showtime } from "./models/sync.js"; // Import necessary models
 
 dotenv.config();
 
@@ -23,7 +20,6 @@ const app = express();
 app.use(express.json());
 app.set("view engine", "ejs");
 
-// Enable CORS
 app.use(
   cors({
     origin: "http://localhost:4500",
@@ -32,19 +28,14 @@ app.use(
   })
 );
 
-// Use Swagger UI for API documentation
 app.use("/api-docs", swaggerMiddleware, swaggerSetup);
 
-// Define user and admin routes
 app.use("/movieshub/user", routes);
 app.use("/movieshub/admin", adminRoutes);
 
-// Route for rendering the booking page
 app.get("/", (req, res) => {
-  res.render("index.ejs"); // Render the index.ejs file
+  res.render("index.ejs"); 
 });
-
-
 
 // Success route
 app.get("/success", (req, res) => {
@@ -53,10 +44,8 @@ app.get("/success", (req, res) => {
 
 // Cancel route
 app.get("/cancel", (req, res) => {
-  res.render("cancel.ejs"); // Render the cancel EJS view
+  res.render("cancel.ejs");
 });
-
-// Additional routes and server setup...
 
 // Start the server
 const port = 4500;
