@@ -4,6 +4,7 @@ import Validator from "validatorjs";
 import bcrypt from "bcryptjs";
 import User from "../models/users.js";
 import Movie from "../models/movies.js";
+import redisClient from "../redisClient.js"; 
 import Showtime from "../models/showtimes.js";
 import Booking from "../models/booking.js";
 import { Op } from "sequelize";
@@ -158,21 +159,49 @@ export const getmovieslist = async (req, res) => {
   if (!token) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
+
   try {
     const decoded = jwt.verify(token, "secretkey");
     const email = decoded.email;
     console.log(email);
 
-    const movies = await Movie.findAll();
+    // Check Redis cache first
+    redisClient.get("moviesList", async (err, cachedMovies) => {
+      if (err) {
+        console.error("Redis error:", err);
+        return res
+          .status(500)
+          .send({ success: false, message: "Internal server error" });
+      }
 
-    if (movies.length == 0) {
-      return res
-        .status(404)
-        .send({ success: false, message: "Movies not Available!" });
-    }
-    return res
-      .status(200)
-      .send({ success: true, message: "List of All Movies", data: movies });
+      if (cachedMovies) {
+        // If cached data is found, return it
+        console.log("Fetching movies from cache...");
+        return res.status(200).send({
+          success: true,
+          message: "List of All Movies (from cache)",
+          data: JSON.parse(cachedMovies), // Parse the cached data
+        });
+      } else {
+        // If no cached data, fetch from the database
+        const movies = await Movie.findAll();
+
+        if (movies.length === 0) {
+          return res
+            .status(404)
+            .send({ success: false, message: "Movies not Available!" });
+        }
+
+        // Store the movies in Redis cache
+        redisClient.setex("moviesList", 7200, JSON.stringify(movies)); 
+
+        return res.status(200).send({
+          success: true,
+          message: "List of All Movies",
+          data: movies,
+        });
+      }
+    });
   } catch (error) {
     console.log(error);
     return res
@@ -551,10 +580,6 @@ export const authroute = async (req, res) => {
     });
   }
 };
-
-// import Stripe from "stripe";
-// import Log from "../utils/logger.js";
-
 // const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 //   apiVersion: "2023-10-16",
 // });
