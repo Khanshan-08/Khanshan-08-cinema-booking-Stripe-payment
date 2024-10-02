@@ -7,6 +7,9 @@ import { swaggerMiddleware, swaggerSetup } from "./config/swagger.js";
 import Stripe from "stripe";
 import dotenv from "dotenv";
 
+// Import Redis client
+import redisClient from "../src/redisClient.js"; // Make sure the path is correct
+
 dotenv.config();
 
 console.log("Stripe Secret Key:", process.env.STRIPE_SECRET_KEY);
@@ -33,13 +36,28 @@ app.use("/api-docs", swaggerMiddleware, swaggerSetup);
 app.use("/movieshub/user", routes);
 app.use("/movieshub/admin", adminRoutes);
 
+// Example Redis usage (Optional: Get and Set data from Redis)
+app.get("/redis-test", async (req, res) => {
+  // Set a Redis key-value pair
+  redisClient.set("greeting", "Hello from Redis!");
+
+  // Get the value from Redis
+  redisClient.get("greeting", (err, reply) => {
+    if (err) {
+      console.error("Redis error:", err);
+      return res.status(500).send("Redis error occurred.");
+    }
+    res.send(`Stored Redis value: ${reply}`);
+  });
+});
+
 app.get("/", (req, res) => {
-  res.render("index.ejs"); 
+  res.render("index.ejs");
 });
 
 // Success route
 app.get("/success", (req, res) => {
-  res.render("success.ejs"); 
+  res.render("success.ejs");
 });
 
 // Cancel route
