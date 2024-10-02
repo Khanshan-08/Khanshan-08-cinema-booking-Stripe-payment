@@ -1,9 +1,8 @@
-import redis from "redis";
+import { createClient } from "redis";
 
 // Create a Redis client
-const client = redis.createClient({
-  host: "localhost",
-  port: 6379,
+const client = createClient({
+  url: "redis://localhost:6379",
 });
 
 // Handle connection events
@@ -14,5 +13,8 @@ client.on("connect", () => {
 client.on("error", (err) => {
   console.error("Redis error:", err);
 });
+
+// Connect to Redis
+await client.connect();
 
 export default client;

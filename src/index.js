@@ -36,19 +36,19 @@ app.use("/api-docs", swaggerMiddleware, swaggerSetup);
 app.use("/movieshub/user", routes);
 app.use("/movieshub/admin", adminRoutes);
 
-// Example Redis usage (Optional: Get and Set data from Redis)
+// Example Redis usage (using async/await)
 app.get("/redis-test", async (req, res) => {
-  // Set a Redis key-value pair
-  redisClient.set("greeting", "Hello from Redis!");
+  try {
+    // Set a Redis key-value pair
+    await redisClient.set("greeting", "Hello from Redis!");
 
-  // Get the value from Redis
-  redisClient.get("greeting", (err, reply) => {
-    if (err) {
-      console.error("Redis error:", err);
-      return res.status(500).send("Redis error occurred.");
-    }
+    // Get the value from Redis
+    const reply = await redisClient.get("greeting");
     res.send(`Stored Redis value: ${reply}`);
-  });
+  } catch (err) {
+    console.error("Redis error:", err);
+    res.status(500).send("Redis error occurred.");
+  }
 });
 
 app.get("/", (req, res) => {
